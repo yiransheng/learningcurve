@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+	<title>{{ title }}</title>
+	<link href="{{ static_dir }}/css/font-awesome.css" media="screen" rel="stylesheet" type="text/css">
+	<link href="{{ static_dir }}/css/global.css" media="screen" rel="stylesheet" type="text/css">
+	<link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700|Droid+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+	<script type="text/javascript" src="{{ static_dir }}/jslibs/jquery.mousewheel.js"></script>
+	<script type="text/javascript" src="{{ static_dir }}/jslibs/underscore-min.js"></script>
+	<script type="text/javascript" src="{{ static_dir }}/jslibs/json2.js"></script>
+	<script type="text/javascript" src="{{ static_dir }}/jslibs/backbone-min.js"></script>
+    </head>
+    <body>
+	<div id="msg" class="icon-repeat panel">Loading...</div>
+	<div id="admin-entry-point">
+	</div>
+	<div id='container'> 
+	    <div id='menu' class="panel">
+                  <button name='open'>Open</button>
+                  <button name='describe'>Description</button>
+                  <button name='del'>Delete</button>
+                  <button name='remove'>Remove</button>
+		</div>
+	    <div id='container-resources' class='fleft'> </div>
+	    <div class="fright">
+	        <div id='container-topic-desc'> </div>
+		<div class="wrapper">
+		    <div id='container-topics'> </div>
+		</div>
+	    </div>
+	    <div id='panel-medium' class='panel'> </div>
+	    <div id='panel-big' class='panel'> 
+		<div id="topic-tree"> </div>
+		<div id="topic-info"> </div>
+		<div id="admin">
+		    topic /
+		    <button id="tab-topic" class="round btn icon-file"></button>
+		    resource /
+		    <button id="tab-resource" class="round btn icon-bookmark"></button>
+		    <div class="tab"><div id="topic-mgt"> </div></div>
+		    <div class="tab"><div id="resource-mgt"> </div></div>
+		</div>
+	        <div class="control"> 
+		    <button class="btn icon-share done">Include Topics</button>	
+		    <button class="btn icon-refresh refresh">Refresh</button>	
+		    <button class="btn icon-remove close">Cancel</button>	
+		</div>
+	    </div>
+	</div>
+      <!-- Templates -->
+       <script type="text/template" id="resource-template">
+	   <div class="icon r-<%= type %>"></div>
+	   <span class="close circle icon-remove hide"></span>
+	   <div class="title"><a target='_blank' class='icon-external' href="<%= link %>"><%= dtitle  %></a></div>
+	   </script>
+       <script type="text/template" id="resource-template-note">
+	   <div class="title"><a target='_blank' class='icon-external' href="<%= link %>"><%= title  %></a></div>
+	   <hr>
+	   <div>
+	    <%= note %>
+	   </div>
+	   </script>
+	<script type="text/template" id="topic-template">
+	    <div class="title">
+	        <span class="close circle icon-remove"></span>
+		<a href="#" id="<%= cid %>"><%= name  %></a>
+	   </div>
+	   <div class="count-interface">
+	       <%= resourcecount %> resources attached
+	       <%= subtopiccount %> sub-topics
+	   </div>
+	   </script>
+	<script type="text/template" id="button-template">
+	    <button type="button" value=" <%= text %> "> <%= text %> </button> 
+	   </script>
+	   
+	   <script type="text/javascript">
+	       window.user_is_admin = {{ role }};
+	       window.login_url = "{{ login_url }}";
+	       window.user_email = "{{ user }}";
+	   </script>
+	<script type="text/javascript" src="{{ static_dir}}/main.js"></script>
+    </body>
+</html>
+

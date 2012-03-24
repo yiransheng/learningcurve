@@ -1,0 +1,3 @@
+Learning Curve is an app that helps its user organize online resources in the process of learning. It is a bookmark management tool with extended functionality. By grouping files, links, documentations etc. into topics, Learning Curve blesses its user the interface to quickly lookup learning materials encountered in the past. 
+
+This application is written in Backbone.js, with a backend designed for Google Appengine. 
