@@ -96,7 +96,7 @@ def create_subject(handler, name, description):
 
 
 @auth
-def create_resource(handler,title,link,note,parent_id,type='webpage'):
+def create_resource(handler,title,link,note,parent_id=None,type='webpage'):
     topic_key = models.get_key(parent_id, "Topic") if parent_id else models.get_key("Bookmark", kind="Topic", encoded=False)	
     resource = models._create_resource(title,link,note,topic_key,type)
 
