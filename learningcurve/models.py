@@ -10,6 +10,7 @@ from google.appengine.api.datastore import Key
 import learningcurve
 from learningcurve import settings
 
+
 def get_key(value, kind=None, parent=None, encoded=True):
 
     if encoded:
@@ -55,6 +56,11 @@ def get_instance(value, model, parent=None):
 
 
 def _create_resource(title,link,note,topic_key,type='document'):
+    topic_instance = get_instance(topic_key, Topic)
+    if not topic_instance:
+        topic_instance = Topic( key_name = "Bookmark" )
+	topic_instance.put()
+
     resource = Resource(
 	        title = title,
 		link = link,
@@ -136,7 +142,15 @@ def _get_resources(topic_keys):
 	return 
 
     return q.fetch(settings.FETCH_THEM_ALL)
+
+def _get_bookmarks():
+    q = db.Query(Resource)
+    q.filter('topic =', get_key("Bookmark", kind="Topic", encoded=False))
+
+    return q.fetch(settings.FETCH_THEM_ALL)
     
+
+   
 
 # Model Classes
 
@@ -146,8 +160,8 @@ class Counter(db.Model):
 
 class Topic(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
-    name = db.StringProperty(required=True)
-    description = db.StringProperty(indexed=False, required=True)
+    name = db.StringProperty(required=True, default="Bookmarks")
+    description = db.StringProperty(indexed=False, required=True, default="All bookmarks.")
     size = db.IntegerProperty(default=0)
 
     def to_dict(self):
@@ -165,7 +179,7 @@ class Resource(db.Model):
     title = db.StringProperty(required=True)
     type = db.StringProperty(default="tutorial")
     link = db.LinkProperty(required=True)
-    topic = db.ReferenceProperty(required=True)
+    topic = db.ReferenceProperty()
 
     def to_dict(self):
 	return {

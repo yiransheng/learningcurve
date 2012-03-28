@@ -74,6 +74,8 @@ $(function(){
        "container"             : "#container",
        "container_admin"       : "#admin-entry-point",
        "container_resources"   : "#container-resources",
+       "container_incoming"    : "#container-resources-list",
+       "container_bookmarks"   : "#container-bookmarks",
        "container_topics"      : "#container-topics",
        "container_topic_desc"  : "#container-topic-desc",
        "container_panel_mid"   : "#panel-medium",
@@ -83,10 +85,12 @@ $(function(){
        "container_topic_mgt"   : "#topic-mgt",
        "container_resource_mgt": "#resource-mgt",
        "template_resource"     : "#resource-template",
+       "template_resource_edit": "#resource-template-edit",
        "template_resource_note": "#resource-template-note",
        "template_topic"        : "#topic-template",
        "template_button"       : "#button-template",
        "class_resource"        : "resource",
+       "class_resource_edit"   : "resource-edit",
        "class_topic"           : "topic",
        "EVENTS"                : {
                                     "TOPICPINNED" : "topicpinned",
@@ -94,6 +98,7 @@ $(function(){
 				    "SAVE"        : "savemodel",
 				    "CONTROL"     : "showpanel",
 				    "RIGHTMENU"   : "showmenu", 
+				    "BOOKMARKVIEW": "bookmarkview", 
 				    "GOTO"        : "goto", 
                                  }, 
        "msg"                   : "#msg" 
@@ -130,6 +135,7 @@ $(function(){
    p= $(global.container_resources);
    h = $(window).height()-p.offset().top;
    p.height(h);
+   $(global.container_incoming).height(h);
    
    $(global.container_topic_mgt).parent().hide();
    $(global.container_resource_mgt).parent().hide();
@@ -518,6 +524,7 @@ $(function(){
 	    __.dispatcher.bind(global.EVENTS.SAVE, this.makeAndSave);      
 	    __.dispatcher.bind(global.EVENTS.CONTROL, this.globalControl);      
 	    __.dispatcher.bind(global.EVENTS.GOTO, this.redirect);      
+	    __.dispatcher.bind(global.EVENTS.BOOKMARKVIEW, this.switchview);      
 	},
 
 	pinTopic: function(e){
@@ -551,7 +558,7 @@ $(function(){
             e.clearForm();
 	    $.getJSON(url, obj, function(res) {
 	        if (res.status == "success"){
-		    obj.id = res.response.topic_id || res.response.resource_id
+		    obj.id = res.response.subject_id || res.response.topic_id || res.response.resource_id
 		    e.makeModel(obj);
 		} else if (res.status == 'forbidden') {
 	            admin.msg("Access Denied.");	    
@@ -598,6 +605,21 @@ $(function(){
 	    $.getJSON(this.urls.delete, data, call_back);
 	},
 
+	update: function(data) {
+	    $.getJSON(this.urls.update, data, function(res) {
+	        if (res.status == "success") {
+		   if (res.response.type="Resource") {
+		       var r = Incoming.resources.get(res.response.updated);
+		       var t = AllTopics.get(r.get("topic_id"));
+		       t.addChildren(r);
+		       t.trigger("resourcesadded", r, t);
+		   } 
+		} else {
+		
+		}    
+	    });        	
+	}
+
     };
     
     var Admin = function( user ) {
@@ -617,6 +639,7 @@ $(function(){
 	    }
 	    __.dispatcher.bind(global.EVENTS.CONTROL, this.globalControl);      
 	    __.dispatcher.bind(global.EVENTS.GOTO, this.redirect);      
+	    __.dispatcher.bind(global.EVENTS.BOOKMARKVIEW, this.switchview);      
 	}
 
     };
@@ -629,6 +652,8 @@ $(function(){
 		 "new_subject"    : "/api/create_subject", 
 		 "new_resource"   : "/api/create_resource", 
 		 "load_resources" : "/api/load_resources", 
+		 "load_bookmarks" : "/api/load_bookmarks", 
+		 "update"         : "/api/update", 
 		 "delete"         : "/api/delete",        
 	},
 
@@ -670,6 +695,22 @@ $(function(){
             });
 	 
 	}, 
+
+	loadBookmarks: function() {
+	    var self = this;
+	    this.msg("Loading bookmarks...");
+            $.getJSON(this.urls.load_bookmarks, function(data){
+		if (data.status == "success") {
+                    _.each(data.response.bookmarks, function(resource){
+		        var r = new Resource(resource);
+			Incoming.resources.add(r);
+		    }, this);
+	            self.msg("Done.", "off");
+		} else {
+	            self.msg("Failed loading bookmarks");
+		}
+            });
+	},
 
 	loadResourcesOf: function(topics) {
 	    if ( !(topics instanceof Array) ) {
@@ -734,7 +775,13 @@ $(function(){
 
 	redirect: function(url) {
 	    window.open(url, "_self"); 
+	}, 
+
+	switchview: function() {
+	    $(global.container_resources).toggleClass("hide");	    
+	    $(global.container_incoming).toggleClass("hide");	    
 	}
+
 
     };
 
@@ -877,6 +924,96 @@ $(function(){
 
     });
 
+    var ResourceEditView = ResourceView.extend({
+
+	tagName: "tr",
+
+	className: global.class_resource_edit,
+
+	initialize: function() {
+	    _.bindAll(this, "findParent");
+            this.parent_model = null;
+	},
+
+        events : {
+	    "mouseover"   : "showicons",
+	    "mouseout"    : "hideicons",
+	    "click .btn"  : "actions"
+	},
+
+
+	template: _.template($(global.template_resource_edit).html()),
+
+	render: function() {
+            $(this.el).html(this.template(this.model.toJSON()));	
+	    return this
+	},
+
+	actions: function(e) {
+	    e.stopPropagation();
+	    e.preventDefault();
+	    var act = $(e.target).attr("name");
+	    this[act].call(this);
+	}, 
+
+	edit: function() {
+	    if (admin.user.admin()) {
+	        this.$('.menu').toggleClass("hide");    
+		this.$('.editable').attr("disabled", false).removeClass("hide");
+		$(this.el).height(150);
+	    } else {
+	        admin.msg("You are not admin.");
+	    }
+	}, 
+
+	save: function() {
+	    if (admin.user.admin()) {
+	        this.$('.menu').toggleClass("hide");    
+		this.$('.editable').attr("disabled", "true");
+		this.$('[name="type"]').addClass("hide");
+		this.$('[name="link"]').addClass("hide");
+		$(this.el).height(60);
+		this.model.set({"type":this.$('[name="type"]').attr("value")});
+		this.model.set({"link":this.$('[name="link"]').attr("value")});
+		this.model.set({"title":this.$('[name="title"]').attr("value")});
+		this.model.set({"note":this.$('[name="note"]').attr("value")});
+		this.model.set({"topic_id":this.findParent()});
+		var obj = this.model.toJSON();
+		delete obj.dtitle;
+		obj.obj_id = this.model.id;
+
+		admin.update(obj);
+	    } else {
+	        admin.msg("You are not admin.");
+	    }
+	}, 
+
+	del: function() {
+	    this.clear();
+            admin.delete(this.model, this);
+	}, 
+
+	getparent: function() {
+	    this.trigger(global.EVENTS.GETPARENT, this);	   
+	},
+
+	findParent: function(e) {
+	   if (!e) {
+	       return this.model.get("topic_id") || null 
+	   }
+	   
+	   this.parent_model = e;
+	   this.model.set({"topic_id":e.id});
+           this.$('.parent').html(e.get("name")).attr("id", e.id);	   	    
+	   return this
+	}, 
+
+	clear: function(e) {
+	    Incoming.resources.remove( this.model );
+	}
+        
+    });
+
     var ResourceNoteView = Backbone.View.extend({
         
         el: global.container_panel_mid,
@@ -939,6 +1076,20 @@ $(function(){
 	    this.resourceViews[resource.cid].remove();
 	    delete this.resourceViews[resource.cid];
 	}
+    });
+
+    var IncomingListView = ResourceListView.extend({
+        el : global.container_bookmarks, 
+
+	addMore: function( resource ) {
+	    var rv = this.resourceViews[resource.cid];
+	    if (!rv){
+		var rv = new ResourceEditView({ model: resource });
+		this.resourceViews[resource.cid] = rv;
+	    }
+	    $(this.el).append(rv.render().el);
+	}
+
     });
 
     var TopicView = Backbone.View.extend({
@@ -1054,6 +1205,19 @@ $(function(){
 	    $(global.container_topic_tree).empty();
             tree.appendTo(global.container_topic_tree);
 	    $(this.el).height(tree.height()+100);
+	    if (admin.user.admin()) {
+	        var bt_hide = new BtnView({ className: "btn round icon-chevron-left"});    
+		bt_hide.args = this;
+		bt_hide.btn.set({
+		       "text"    :"",
+		       "event"   :"togglepanel" 
+		    });
+		this.$(".control").append(bt_hide.render().el);
+		__.dispatcher.bind("togglepanel", function(v, btn) {
+		    $(btn.el).toggleClass("icon-chevron-right").toggleClass("icon-chevron-left");
+		    $(v.el).toggleClass("full");
+		});
+	    }
 	},
 
 	hide: function() {
@@ -1176,7 +1340,7 @@ $(function(){
 
 	initialize: function() {
 	    if ( admin.user.admin() ) {
-	        $(global.container_panel_big).css({right: 0});    
+	        // $(global.container_panel_big).css({right: 0});    
 	    }	    
 
 	    this._bt1 = new BtnView({ className: 'btn icon-cog' });
@@ -1192,6 +1356,18 @@ $(function(){
 	        "text" : login_text,
 		"event": global.EVENTS.GOTO
 	    });
+	    this._bt3 = new BtnView({ className: 'btn icon-github-sign' });
+            this._bt3.args = "https://github.com/yiransheng/learningcurve";
+	    this._bt3.btn.set({
+	        "text" : "See it on Github",
+		"event": global.EVENTS.GOTO
+	    });
+            this._bt4 = new BtnView({ className: 'btn icon-th-list' });
+	    this._bt4.btn.set({
+	        "text" : "Bookmarks / Resources",
+		"event": global.EVENTS.BOOKMARKVIEW
+	    });
+
 	},
 
         events: {
@@ -1199,7 +1375,9 @@ $(function(){
 	},
 
 	render: function() {
+            $(this.el).append(this._bt3.render().el);	
             $(this.el).append(this._bt2.render().el);	
+            $(this.el).append(this._bt4.render().el);	
             $(this.el).append(this._bt1.render().el);	
 	}
     
@@ -1388,6 +1566,7 @@ $(function(){
     adminView.render();
     window.AllTopics = new TopicList;
     window.Gallery  = new ResourceListView;
+    window.Incoming  = new IncomingListView;
     window.NoteArea = new ResourceNoteView;
     window.TopicArea = new TopicListView;
     window.topicForm = new TopicForm();
@@ -1396,4 +1575,8 @@ $(function(){
     window.resourceFormView = new ResourceFormView({  model:resourceForm });
     window.menu = new MenuView;
     admin.getRoot();
+
+    admin.loadBookmarks();
+    
+
     });

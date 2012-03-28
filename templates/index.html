@@ -23,6 +23,9 @@
                   <button name='remove'>Remove</button>
 		</div>
 	    <div id='container-resources' class='fleft'> </div>
+	    <div id='container-resources-list' class='fleft hide'> 
+	        <table id="container-bookmarks"> </table>
+	    </div>
 	    <div class="fright">
 	        <div id='container-topic-desc'> </div>
 		<div class="wrapper">
@@ -54,6 +57,26 @@
 	   <span class="close circle icon-remove hide"></span>
 	   <div class="title"><a target='_blank' class='icon-external' href="<%= link %>"><%= dtitle  %></a></div>
 	   </script>
+       <script type="text/template" id="resource-template-edit">
+	   <td> 
+	       <p><a href="<%= link %>" target="_blank"><input value="<%= title %>" name="title" disabled="true" class="editable"/></a></p>
+	       <p><input value="<%= type %>" name="type" disabled="true" class="editable hide"/></p> 
+	       <p><input value="<%= link %>" name="link" disabled="true" class="editable hide"/></p> 
+	   </td>
+	   <td> 
+	       <textarea disabled="true" name="note" class="editable"><%= note %></textarea>
+	       <div class='circle hide'>
+		   <button class="btn icon-edit" name="edit">Edit</button>
+		   <div class="menu hide">
+		       <div class="parent"> </div>
+		       <button class="btn icon-check" name="save">Save</button>
+		       <button class="btn icon-remove" name="del">Delete</button>
+		       <button class="btn icon-play" name="getparent">Set Parent</button>
+		   </div>
+	       </div>
+	   </td>
+	   </script>
+
        <script type="text/template" id="resource-template-note">
 	   <div class="title"><a target='_blank' class='icon-external' href="<%= link %>"><%= title  %></a></div>
 	   <hr>
@@ -80,7 +103,7 @@
 	       window.login_url = "{{ login_url }}";
 	       window.user_email = "{{ user }}";
 	   </script>
-	<script type="text/javascript" src="{{ static_dir}}/main.min.js"></script>
+	<script type="text/javascript" src="{{ static_dir}}/main.js"></script>
     </body>
 </html>
 

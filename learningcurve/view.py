@@ -108,7 +108,7 @@ def jsonify(obj):
         return [jsonify(item) for item in iterator]
 
 class ApiHandler(TemplatedRequestHandler):
-   def get(self, action):
+    def get(self, action):
         res = self.response
         attr = getattr(controller, action, None)
         if not attr:
@@ -152,11 +152,13 @@ class ApiHandler(TemplatedRequestHandler):
         res.headers['Content-Type'] = 'application/json'
         res.out.write(simplejson.dumps(result, separators=(',', ':')))
 
+    post = get
+
 class AppHandler(TemplatedRequestHandler):
     def get(self):
 	login = users.create_login_url(self.request.url)
-	role = str( users.is_current_user_admin() ).lower()
 	user = users.get_current_user() 
+	role = str( users.is_current_user_admin() ).lower()
 	user_email = user.email() if user else None
         self.render("index.html", title = "Learning Curve", 
 		                  static_dir = "/static", 

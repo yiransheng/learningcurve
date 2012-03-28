@@ -32,6 +32,29 @@ def _update_cached_tree(topic, parent_key_name = None):
     return True
 
 @auth
+def update(handler, obj_id, **kwargs):
+    obj_key = models.get_key(obj_id)
+    if obj_key.kind() == "Topic":
+	topic = models.db.get(obj_key)
+	topic.name = kwargs["name"]
+	topic.description = kwargs["description"]
+	topic.put()
+	return { "updated":obj_id, "type": "Topic" }
+
+    elif obj_key.kind() == "Resource":
+        resource = models.db.get(obj_key)
+        resource.title = kwargs["title"]
+        resource.note = kwargs["note"]
+        resource.link = kwargs["link"]
+        resource.type = kwargs["type"]
+	resource.topic = models.get_key(kwargs["topic_id"])
+	resource.put()
+	return { "updated":obj_id, "type":"Resource" }
+
+    else: 
+	return {"updated":""}
+
+@auth
 def delete(handler, obj_id):
     obj_key = models.get_key(obj_id)
     if obj_key.kind() == "Topic":
@@ -74,7 +97,7 @@ def create_subject(handler, name, description):
 
 @auth
 def create_resource(handler,title,link,note,parent_id,type='webpage'):
-    topic_key = models.get_key(parent_id, "Tis_admin(users.get_current_user()):opic")	
+    topic_key = models.get_key(parent_id, "Topic") if parent_id else models.get_key("Bookmark", kind="Topic", encoded=False)	
     resource = models._create_resource(title,link,note,topic_key,type)
 
     return { "resource_id" : resource.key().__str__() }
@@ -89,6 +112,13 @@ def load_resources(handler, topic_ids):
     resources = [r.to_dict() for r in resources]
     
     return { "resources" : resources }
+
+@public
+def load_bookmarks(handler):
+    bookmarks = models._get_bookmarks()
+    bookmarks = [r.to_dict() for r in bookmarks]
+
+    return { "bookmarks" : bookmarks }
 
 @public
 def get_topic_tree(handler, topic_id=None):
@@ -114,6 +144,8 @@ def get_topic_tree(handler, topic_id=None):
     for topic in topics:
 	topic_dict = topic.to_dict()
         locstr = topic.key().name() 
+	if (locstr == "Bookmark"):
+            continue
         loc_nodes = locstr.split(".")
 	parent_locstr = ".".join(loc_nodes[0:len(loc_nodes)-1])
 	if parent_locstr:
