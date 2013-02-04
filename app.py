@@ -1,4 +1,3 @@
-
 import logging
 import os
 import wsgiref.handlers
@@ -7,7 +6,6 @@ from google.appengine.dist import use_library
 
 # Use Django 1.1 instead of Django 0.96. This code must run before the GAE web
 # framework is loaded.
-os.environ['DJANGO_SETTINGS_MODULE'] = 'storyteller.settings'
 use_library('django', '1.1')
 
 from google.appengine.ext import webapp
