@@ -129,7 +129,7 @@ class ApiHandler(TemplatedRequestHandler):
                 # kwargs[str(arg)] = simplejson.loads(str(cgi.escape(req.get(arg))))
 		if len(req.get_all(arg)) > 1:
 		    kwargs[str(arg)] = map(cgi.escape, req.get_all(arg))
-		else: 
+		else:
                     kwargs[str(arg)] = str(cgi.escape(req.get(arg)))
 
             data = attr(self, **kwargs) if callable(attr) else attr
@@ -156,15 +156,16 @@ class ApiHandler(TemplatedRequestHandler):
 
 class AppHandler(TemplatedRequestHandler):
     def get(self):
-	login = users.create_login_url(self.request.url)
-	user = users.get_current_user() 
+	login = users.create_login_url('/')
+	user = users.get_current_user()
 	role = str( users.is_current_user_admin() ).lower()
 	user_email = user.email() if user else None
-        self.render("index.html", title = "Learning Curve", 
-		                  static_dir = "/static", 
-				  login_url = login, 
+        self.render("index.html", title = "Learning Curve",
+		                  static_dir = "/static",
+				  login_url = login,
 				  user = user_email,
 				  role = role)
+        return
 
 class NotFoundHandler(TemplatedRequestHandler):
     def get(self):

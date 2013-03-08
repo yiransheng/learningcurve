@@ -682,6 +682,16 @@ $(function(){
 		    }
 		    window.root = new Topic(data.response);
 		    root.attachSubtopics();
+            _.each(root.get("subtopics"), function(topic) {
+                try{
+                    TopicArea.topics.add(topic, {silent:true});
+                    TopicArea.topics.trigger("include", topic);
+                } catch (err) {
+                    console.log(err);
+                    console.log("TOPIC-AREA:", TopicArea.topics);
+                }
+            });
+            self.loadResourcesOf(data.response.subtopics);
 		} else {
 		    window.root = root || new Topic(
 			{"description":"","name":"ROOT","subtopics":[]}    
@@ -742,7 +752,6 @@ $(function(){
 	    if ( !(resources instanceof Array) ) {
 	        resources = [resources];
 	    }    		
-
 	    var topic_id, topic, resource_model, r, rids;
 	    _.each(resources, function(resource) {
 		resource_model = resource instanceof Resource ? resource : (new Resource(resource) || null) 
@@ -770,7 +779,9 @@ $(function(){
 	},
 	
 	globalControl: function(e) {
-	    $(e).toggle(600);
+	    $(e).toggle(400, function(){
+            window.TopicBrowser.update();
+        });
 	}, 
 
 	redirect: function(url) {
@@ -935,7 +946,7 @@ $(function(){
             this.parent_model = null;
 	},
 
-        events : {
+    events : {
 	    "mouseover"   : "showicons",
 	    "mouseout"    : "hideicons",
 	    "click .btn"  : "actions"
@@ -1160,8 +1171,8 @@ $(function(){
 
 	initialize: function() {
 	    _.bindAll(this, "update");
-            this.update();	
 	    this.model.bind("change", this.update);
+        this.update();	
 	    // this.bind(global.EVENTS.TOPICPINNED, );
 	},
 	
@@ -1184,13 +1195,13 @@ $(function(){
 	},
 
 	update: function() {
-            this.modelObj = this.model.all_toJSON();	
+        this.modelObj = this.model.all_toJSON();	
 	    this.render();
 	},
 
 	// takes a json string, returns a nested html structure
 	render: function () {
-            var html, tree, node; 
+        var html, tree, node; 
 	    html = JSON.stringify( this.modelObj );
 	    html = html.replace(/(,*){"cid":/g, '<li><a href="#" id=');
 	    html = html.replace(/,"name":"/g, '>');
@@ -1205,18 +1216,19 @@ $(function(){
 	    $(global.container_topic_tree).empty();
             tree.appendTo(global.container_topic_tree);
 	    $(this.el).height(tree.height()+100);
-	    if (admin.user.admin()) {
+	    if (admin.user.admin() && !this.toggleBtnDrawn) {
+            this.toggleBtnDrawn = true;
 	        var bt_hide = new BtnView({ className: "btn round icon-chevron-left"});    
-		bt_hide.args = this;
-		bt_hide.btn.set({
+		    bt_hide.args = this;
+		    bt_hide.btn.set({
 		       "text"    :"",
 		       "event"   :"togglepanel" 
 		    });
-		this.$(".control").append(bt_hide.render().el);
-		__.dispatcher.bind("togglepanel", function(v, btn) {
-		    $(btn.el).toggleClass("icon-chevron-right").toggleClass("icon-chevron-left");
-		    $(v.el).toggleClass("full");
-		});
+            this.$(".control").append(bt_hide.render().el);
+            __.dispatcher.bind("togglepanel", function(v, btn) {
+                $(btn.el).toggleClass("icon-chevron-right").toggleClass("icon-chevron-left");
+                $(v.el).toggleClass("full");
+            });
 	    }
 	},
 
@@ -1351,7 +1363,7 @@ $(function(){
 	    });
 	    this._bt2 = new BtnView({ className: 'btn icon-user' });
             this._bt2.args = window.login_url;
-	    var login_text = window.user_is_admin ? user.email : "Login (Not Sign-up)"; 
+	    var login_text = window.user_is_admin ? user.email : "Login (No Sign-up Offered)"; 
 	    this._bt2.btn.set({
 	        "text" : login_text,
 		"event": global.EVENTS.GOTO
@@ -1577,6 +1589,5 @@ $(function(){
     admin.getRoot();
 
     admin.loadBookmarks();
-    
 
-    });
+});
